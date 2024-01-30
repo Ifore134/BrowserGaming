@@ -1,17 +1,20 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect,useState } from 'react';
 
 const BreakoutGame = () => {
     const canvasRef = useRef(null);
     const requestRef = useRef();
     let rightPressed = false;
     let leftPressed = false;
-
+    const [level, setLevel] = useState(1);
+    const [gameStatus, setGameStatus] = useState('playing');
     useEffect(() => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
+        
 
         let ballRadius = 10;
-        let x = canvas.width / 2;
+        // let x = canvas.width / 2;
+        let x=Math.floor(Math.random() * canvas.width);
         let y = canvas.height - 30;
         let dx = 2;
         let dy = -2;
@@ -31,6 +34,47 @@ const BreakoutGame = () => {
             bricks[c] = [];
             for (let r = 0; r < brickRowCount; r++) {
                 bricks[c][r] = { x: 0, y: 0, status: 1 };
+            }
+        }
+        const initlevel = () =>{
+            if(level==1){
+                
+                x=Math.floor(Math.random() * canvas.width);
+                y = canvas.height - 30;
+                dx = 2;
+                dy = -2;
+                
+                paddleX = (canvas.width - paddleWidth) / 2;
+                brickRowCount = 3;
+                brickColumnCount = 5;
+                
+
+                let bricks = [];
+                for (let c = 0; c < brickColumnCount; c++) {
+                    bricks[c] = [];
+                    for (let r = 0; r < brickRowCount; r++) {
+                        bricks[c][r] = { x: 0, y: 0, status: 1 };
+                    }
+                }
+            }
+            else if(level==2){
+                x = x=Math.floor(Math.random() * canvas.width);
+                y = canvas.height - 30;
+                dx = 3;
+                dy = -3;
+                
+                paddleX = (canvas.width - paddleWidth) / 2;
+                brickRowCount = 5;
+                brickColumnCount = 5;
+                
+
+                let bricks = [];
+                for (let c = 0; c < brickColumnCount; c++) {
+                    bricks[c] = [];
+                    for (let r = 0; r < brickRowCount; r++) {
+                        bricks[c][r] = { x: 0, y: 0, status: 1 };
+                    }
+                }
             }
         }
 
@@ -57,7 +101,7 @@ const BreakoutGame = () => {
                 for (let r = 0; r < brickRowCount; r++) {
                     let b = bricks[c][r];
                     if (b.status === 1) {
-                        if (x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                        if (x> b.x && x < b.x + brickWidth+ballRadius && y+ballRadius > b.y && y < b.y + brickHeight) {
                             dy = -dy;
                             b.status = 0;
                         }
@@ -99,13 +143,36 @@ const BreakoutGame = () => {
                 }
             }
         }
+        function boardIsEmpty(){
+            for(let c=0;c<brickColumnCount;c++){
+                for(let r=0;r<brickRowCount;r++){
+                    if (bricks[c][r].status==1){
+                        return false
+                    }
+                }
+            }
+            return true
+        }
+        
 
         function draw() {
+            if (gameStatus !== 'playing') {
+                return; // Stop the game loop if the game is not in 'playing' status
+            }
+        
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawBricks();
             drawBall();
             drawPaddle();
             collisionDetection();
+        
+            if (boardIsEmpty()) {
+                alert("You Win");
+                setGameStatus('won'); // Update game status to 'won'
+                setLevel(level + 1);
+                initlevel(); // Reinitialize for the next level
+                return; // Exit the function to stop further drawing
+            }
         
             if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
                 dx = -dx;
@@ -117,8 +184,7 @@ const BreakoutGame = () => {
                     dy = -dy;
                 } else {
                     alert("GAME OVER");
-                    document.location.reload();
-                    // Removed clearInterval(interval); as it's no longer needed
+                    setGameStatus('lost');
                     return; // Stop the draw function from continuing after game over
                 }
             }
@@ -134,10 +200,14 @@ const BreakoutGame = () => {
             requestRef.current = requestAnimationFrame(draw);
         }
         
+
+        initlevel();
+        requestRef.current = requestAnimationFrame(draw);
+        
         document.addEventListener("keydown", keyDownHandler, false);
         document.addEventListener("keyup", keyUpHandler, false);
         
-        requestRef.current = requestAnimationFrame(draw);
+        
         
         // Clean up function
         return () => {
@@ -146,7 +216,7 @@ const BreakoutGame = () => {
             document.removeEventListener("keyup", keyUpHandler);
         };
         
-    }, []);
+    }, [level, gameStatus]);
 
     // Add TailwindCSS classes as needed for styling
     return <canvas ref={canvasRef} className="max-w-full h-auto bg-white border border-gray-300 mx-auto" width="480" height="320"></canvas>;
